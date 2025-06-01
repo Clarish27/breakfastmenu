@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu Display</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50; /* Green header */
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Menu</h1>
+    <div id="menuTable"></div>
+
+    <h2>Food Priced Over $5.00</h2>
+    <div id="priceTable"></div>
+
+    <h2>Food with Calories Not Exceeding 700 cal</h2>
+    <div id="calorieTable"></div>
+
+    <script>
+        // Load the external XML file
+        fetch('menu.xml')
+            .then(response => response.text())
+            .then(data => {
+                var parser = new DOMParser();
+                var xmlDoc = parser.parseFromString(data, "application/xml");
+
+                function createTable(condition, columns) {
+                    var table = document.createElement("table");
+                    var thead = document.createElement("thead");
+                    var tbody = document.createElement("tbody");
+
+                    var headerRow = document.createElement("tr");
+                    columns.forEach(header => {
+                        var th = document.createElement("th");
+                        th.textContent = header.charAt(0).toUpperCase() + header.slice(1);
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+
+                    var items = xmlDoc.getElementsByTagName("item");
+                    for (var i = 0; i < items.length; i++) {
+                        var name = items[i].getElementsByTagName("name")[0].textContent;
+                        var desc = items[i].getElementsByTagName("description")[0].textContent;
+                        var price = parseFloat(items[i].getElementsByTagName("price")[0].textContent);
+                        var cal = parseInt(items[i].getElementsByTagName("calories")[0].textContent);
+
+                        if (!condition || condition(price, cal)) {
+                            var row = document.createElement("tr");
+                            columns.forEach(col => {
+                                var td = document.createElement("td");
+                                if (col === "price") td.textContent = "$" + price.toFixed(2);
+                                else if (col === "calories") td.textContent = cal + " cal";
+                                else if (col === "name") td.textContent = name;
+                                else if (col === "description") td.textContent = desc;
+                                row.appendChild(td);
+                            });
+                            tbody.appendChild(row);
+                        }
+                    }
+
+                    table.appendChild(tbody);
+                    return table;
+                }
+
+                document.getElementById("menuTable").appendChild(
+                    createTable(null, ["name", "description", "price", "calories"])
+                );
+
+                document.getElementById("priceTable").appendChild(
+                    createTable((p, c) => p > 5, ["name", "description", "calories"])
+                );
+
+                document.getElementById("calorieTable").appendChild(
+                    createTable((p, c) => c <= 700, ["name", "description"])
+                );
+            })
+            .catch(error => console.error('Error loading XML:', error));
+    </script>
+</body>
+</html>
